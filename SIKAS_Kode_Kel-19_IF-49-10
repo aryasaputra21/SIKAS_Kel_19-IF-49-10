@@ -1,0 +1,430 @@
+package main
+import "fmt"
+const NMAX int = 999
+const iuranBulanan int = 10000
+
+type mahasiswa struct{
+	nama, prodi string
+	nim int64
+	totalTunggakan int
+	tanggalBayar [12]int
+	statusTunggakan [12]bool
+}
+type tabMhs [NMAX]mahasiswa
+
+func addMahasiswa(m *tabMhs, jmlData *int){
+	var tempNIM int64
+	var found int
+	found = -1
+	fmt.Printf ("\nMasukkan NIM : ")
+	fmt.Scan (&tempNIM)
+	sortDataNIMSelection (&(*m), *jmlData)
+	cekNIM ((*m), &found, (*jmlData), tempNIM)
+	if found == -1 {
+		(*m)[*jmlData].nim = tempNIM
+		fmt.Print ("Masukkan Nama (Gunakan_Garis_Bawah) (spasi) Prodi Terbaru : ")
+		fmt.Scan(&(*m)[*jmlData].nama, &(*m)[*jmlData].prodi)
+		*jmlData++
+	}else{
+		fmt.Println ("NIM Sudah Ada Dalam Data")
+	}
+}
+
+func showMahasiswa (m tabMhs, jmlData int){
+	if jmlData != 0 {
+		var i, jmlMhs int
+		jmlMhs = 1
+		fmt.Println (" --------------------------------------------------------------------")
+		fmt.Println ("| No  | NIM           | Nama                 | Prodi                 |")
+		fmt.Println (" --------------------------------------------------------------------")
+		for i = 0; i < jmlData; i++{
+			fmt.Printf("| %-3d | %-13d | %-20s | %-20s  |\n", jmlMhs, m[i].nim, m[i].nama, m[i].prodi)
+			jmlMhs++
+		}
+		fmt.Println (" --------------------------------------------------------------------")
+	}else{
+		fmt.Println ("Belum ada data mahasiswa")
+	}
+}
+
+func updateMahasiswa (m *tabMhs, jmlData int) {
+	if jmlData != 0 {
+		var findNIM, newNIM int64
+		var found int
+		found = -1
+		fmt.Printf ("\nMasukkan NIM Yang Ingin Diganti : ")
+		fmt.Scan (&findNIM)
+		sortDataNIMSelection (&(*m), jmlData)
+		cekNIM ((*m), &found, jmlData, findNIM)
+		if found != -1 {
+			fmt.Printf ("\nMasukkan NIM Baru : ")
+			fmt.Scan (&newNIM)
+			(*m)[found].nim = newNIM
+			fmt.Print ("Masukkan Nama (Gunakan_Garis_Bawah) (spasi) Prodi Terbaru : ")
+			fmt.Scan(&(*m)[found].nama, &(*m)[found].prodi)
+		}else{
+			fmt.Println("NIM Tersebut Tidak Ada Dalam Data")
+		}
+	}else{
+		fmt.Println ("Belum ada data mahasiswa")
+	}
+
+}
+
+func deleteMahasiswa (m *tabMhs, jmlData *int) {
+	if *jmlData != 0 {
+		var findNIM int64
+		var found int
+		found = -1
+		fmt.Printf ("\nMasukkan NIM Yang Ingin Dihapus : ")
+		fmt.Scan (&findNIM)
+		sortDataNIMSelection (&(*m), (*jmlData))
+		cekNIM ((*m), &found, *jmlData, findNIM)
+		if found != -1 {
+			(*m)[found] = m[*jmlData-1]
+			*jmlData = *jmlData - 1
+		}else{
+			fmt.Println("NIM Tersebut Tidak Ada Dalam Data")
+		}
+	}else{
+		fmt.Println ("Belum ada data mahasiswa")
+	}
+}
+
+func sortDataNamaSelection (m *tabMhs, jmlData int) {
+	var i, j, idxMin int
+	var temp mahasiswa
+	for i = 0; i < jmlData-1; i++ {
+		idxMin = i
+		for j = i+1; j < jmlData; j++ {
+			if (*m)[j].nama < (*m)[idxMin].nama {
+				idxMin = j
+			}
+		}
+		temp = (*m)[i]
+		(*m)[i] = (*m)[idxMin]
+		(*m)[idxMin] = temp
+	}
+}
+
+func sortDataNIMSelection (m *tabMhs, jmlData int) {
+	var i, j, idxMin int
+	var temp mahasiswa
+	for i = 0; i < jmlData-1; i++ {
+		idxMin = i
+		for j = i+1; j < jmlData; j++ {
+			if (*m)[j].nim < (*m)[idxMin].nim {
+				idxMin = j
+			}
+		}
+		temp = (*m)[i]
+		(*m)[i] = (*m)[idxMin]
+		(*m)[idxMin] = temp
+	}
+}
+
+func cekNIM (m tabMhs, found *int, jmlData int, NIM int64) {
+	var left, right, mid int
+	left = 0
+	right = jmlData-1
+	for left <= right && (*found) == -1 {
+		mid = (left + right)/2
+		if NIM > m[mid].nim {
+			left = mid + 1
+		}else if NIM < m[mid].nim {
+			right = mid - 1
+		}else{
+			(*found) = mid
+		}
+	}
+}
+
+func transaksiMasuk (m *tabMhs, totalKas *int, jmlData, bulanBerjalan int) {
+	if jmlData != 0 {
+		var findNIM int64
+		var found, bulan, tanggal int
+		found = -1
+		fmt.Printf ("\nMasukkan NIM Mahasiswa Yang Membayar : ")
+		fmt.Scan (&findNIM)
+		sortDataNIMSelection (&(*m), jmlData)
+		cekNIM ((*m), &found, jmlData, findNIM)
+		if found != -1 {
+			fmt.Printf ("Bulan Yang Ingin Dilunaskan : ")
+			fmt.Scan (&bulan)
+			if bulan >= 1 && bulan <= 12 {
+				fmt.Printf ("Tanggal Berapa Sekarang : ")
+				fmt.Scan (&tanggal)
+				(*m)[found].statusTunggakan[bulan-1] = true
+				(*m)[found].tanggalBayar[bulan-1] = tanggal
+				fmt.Printf ("\nTransaksi Berhasil\n")
+				*totalKas = *totalKas + iuranBulanan
+				jumlahTunggakan (&(*m), bulanBerjalan, jmlData)
+			}else{
+				fmt.Println("Input Bulan Tidak Valid! Pilih antara Bulan 1-12!")
+			}
+		}else{
+			fmt.Printf("NIM Tersebut Tidak Ada Dalam Data\n\n")
+		}
+	}else{
+		fmt.Println ("Belum ada data mahasiswa")
+	}
+}
+
+func jumlahTunggakan (m *tabMhs, bulanBerjalan, jmlData int) {
+	var i, j int
+	for i = 0; i < jmlData; i++ {
+		(*m)[i].totalTunggakan = 0
+		for j = 0; j < bulanBerjalan; j++ {
+			if (*m)[i].statusTunggakan[j] == false {
+				(*m)[i].totalTunggakan = (*m)[i].totalTunggakan + iuranBulanan
+			}
+		}
+	}
+}
+
+func cariBelumBayarSequential (m tabMhs, jmlData, bulanBerjalan int) {
+	var i, jmlKetemu, j int
+	var punyaTunggakan bool
+	jmlKetemu = 0
+	fmt.Printf("\n               MAHASISWA YANG MASIH PUNYA TUNGGAKAN              \n\n")
+	fmt.Println (" ----------------------------------------------------------------")
+	fmt.Println ("| No  | NIM           | Nama                 | Total Tunggakan   |")
+	fmt.Println (" ----------------------------------------------------------------")
+	for i = 0; i < jmlData; i++ {
+		punyaTunggakan = false
+		for j = 0; j < bulanBerjalan; j++ {
+			if m[i].statusTunggakan[j] == false {
+				punyaTunggakan = true
+			}
+		}
+		if punyaTunggakan {
+			jmlKetemu++
+			fmt.Printf("| %-3d | %-13d | %-20s | Rp.%-13d  |\n", jmlKetemu, m[i].nim, m[i].nama, m[i].totalTunggakan)
+		}
+	}
+	if jmlKetemu == 0 {
+		fmt.Printf ("|     Semua Mahasiswa Sudah Melunasi Uang Kas sampai Bulan %-3d   |\n", bulanBerjalan)
+	}
+	fmt.Println (" ----------------------------------------------------------------")
+}
+
+func sortDataTunggakanInsertion(m *tabMhs, jmlData int) {
+	var i, j int
+	var temp mahasiswa
+	i = 1
+	for i <= jmlData-1 {
+		j = i
+		temp = (*m)[i]
+		for j > 0 && temp.totalTunggakan > (*m)[j-1].totalTunggakan {
+			(*m)[j] = (*m)[j-1]
+			j--
+		}
+		(*m)[j] = temp
+		i++
+	}
+}
+
+func cariBelumBayarBinary(m tabMhs, jmlData int) {
+	var findNIM int64
+	var left, right, mid, found int
+	fmt.Printf("\nMasukkan NIM Mahasiswa yang ingin dicari: ")
+	fmt.Scan(&findNIM)
+	sortDataNIMSelection(&m, jmlData)
+	left = 0
+	right = jmlData - 1
+	found = -1
+	for left <= right && found == -1 {
+		mid = (left + right) / 2
+		if findNIM > m[mid].nim {
+			left = mid + 1
+		} else if findNIM < m[mid].nim {
+			right = mid - 1
+		} else {
+			found = mid
+		}
+	}
+	if found != -1 {
+		if m[found].totalTunggakan > 0 {
+			fmt.Printf("\nMahasiswa ditemukan :\n\nNIM: %d | Nama: %s | Total Tunggakan: Rp %d\n", m[found].nim, m[found].nama, m[found].totalTunggakan)
+		} else {
+			fmt.Println("\nMahasiswa tersebut telah melunasi semua iuran.")
+		}
+	} else {
+		fmt.Println("\nNIM tidak ditemukan dalam data.")
+	}
+}
+
+func tampilBerdasarkanTunggakan(m tabMhs, jmlData int) {
+	var i, jmlMhs int
+	if jmlData != 0 {
+		sortDataTunggakanInsertion(&m, jmlData)
+		fmt.Printf("\n         DATA MAHASISWA BERDASARKAN TUNGGAKAN (TERBESAR)         \n\n")
+		i = 0
+		jmlMhs = 1
+		fmt.Println (" ----------------------------------------------------------------")
+		fmt.Println ("| No  | NIM           | Nama                 | Total Tunggakan   |")
+		fmt.Println (" ----------------------------------------------------------------")
+		for i < jmlData {
+			fmt.Printf("| %-3d | %-13d | %-20s | Rp.%-13d  |\n", jmlMhs, m[i].nim, m[i].nama, m[i].totalTunggakan)
+			i = i + 1
+			jmlMhs = jmlMhs + 1
+		}
+		fmt.Println (" ----------------------------------------------------------------")
+	} else {
+		fmt.Println("Belum ada data mahasiswa")
+	}
+}
+
+func tampilStatistikKeuangan(m tabMhs, jmlData, totalKas int) {
+	var i, minTung, maxTung, lunas int
+	var mhsMin, mhsMax string
+	lunas = 0
+	if jmlData != 0 {
+		minTung = m[0].totalTunggakan
+		maxTung = m[0].totalTunggakan
+		mhsMin = m[0].nama
+		mhsMax = m[0].nama
+		i = 0
+		for i < jmlData {
+			if m[i].totalTunggakan < minTung {
+				minTung = m[i].totalTunggakan
+				mhsMin = m[i].nama
+			}
+			if m[i].totalTunggakan > maxTung {
+				maxTung = m[i].totalTunggakan
+				mhsMax = m[i].nama
+			}
+			if m[i].totalTunggakan == 0 {
+				lunas++
+			}
+			i = i + 1
+		}
+		fmt.Printf ("\n ------------------------------------------------------------\n")
+		fmt.Printf("|                   STATISTIK KEUANGAN KAS                   |\n")
+		fmt.Println (" ------------------------------------------------------------")
+		fmt.Printf("| Total Uang Kas Masuk  : Rp %-7d                         |\n", totalKas)
+		fmt.Printf("| Tunggakan Terkecil    : Rp %-7d ( %-20s) |\n", minTung, mhsMin)
+		fmt.Printf("| Tunggakan Terbesar    : Rp %-7d ( %-20s) |\n", maxTung, mhsMax)
+		fmt.Printf("| Jumlah Mahasiswa Yang Sudah Melunasi Kas : %-8d        |\n", lunas)
+		fmt.Println (" ------------------------------------------------------------")
+	} else {
+		fmt.Println("Belum ada data mahasiswa untuk menghitung statistik")
+	}
+}
+
+func menuOperasi2 () {
+	fmt.Printf ("\n1 : Tambah Data Mahasiswa\n")
+	fmt.Println ("2 : Update Data Mahasiswa")
+	fmt.Println ("3 : Lihat Data Mahasiswa")
+	fmt.Println ("4 : Hapus Data Mahasiswa")
+	fmt.Println ("5 : Menu Awal")
+}
+
+func menuOperasi3 () {
+	fmt.Printf ("\n1 : Input Transaksi Uang Masuk\n")
+	fmt.Println ("2 : Mencari Mahasiswa Yang Belum Membayar Iuran (Sequantial Search Method)")
+	fmt.Println ("3 : Mencari Mahasiswa Yang Belum Membayar Iuran (Binary Search Method)")
+	fmt.Println ("4 : Menampilkan Data Mahasiswa Berdasarkan Tunggakan")
+	fmt.Println ("5 : Menampilkan Statistik Keuangan")
+	fmt.Println ("6 : Menu Awal")
+}
+
+func main () {
+	var run1, run2, run3 bool
+	var jmlData, operasi1, operasi2, operasi3 int
+	var bulanBerjalan, totalKas int
+	var dataMahasiswa tabMhs
+	totalKas = 0
+	jmlData = 0
+	run1 = true
+	run2 = true
+	for run1 {
+		fmt.Println (" --------------------------------")
+		fmt.Println ("|      WELCOME TO SIKAS >_<      |")
+		fmt.Printf (" --------------------------------\n\n")
+		fmt.Println ("Data Mana Yang Anda Ingin Akses ?")
+		fmt.Println ("1 : Data Mahasiswa")
+		fmt.Println ("2 : Data Kas")
+		fmt.Println ("3 : Log Out")
+		fmt.Scan (&operasi1)
+		switch operasi1 {
+			case 1:
+				fmt.Printf ("\nApa Yang Anda Ingin Lakukan ?\n")
+				fmt.Println ("1 : Tambah Data Mahasiswa")
+				fmt.Println ("2 : Update Data Mahasiswa")
+				fmt.Println ("3 : Lihat Data Mahasiswa")
+				fmt.Println ("4 : Hapus Data Mahasiswa")
+				fmt.Println ("5 : Menu Awal")
+				run2 = true
+				for run2 {
+					fmt.Scan (&operasi2)
+					switch operasi2 {
+						case 1:
+							addMahasiswa(&dataMahasiswa, &jmlData)
+							menuOperasi2()
+						case 2:
+							updateMahasiswa(&dataMahasiswa, jmlData)
+							menuOperasi2()
+						case 3:
+							fmt.Printf ("\n                           Data Mahasiswa                          \n\n")
+							sortDataNamaSelection (&dataMahasiswa, jmlData)
+							showMahasiswa(dataMahasiswa, jmlData)
+							menuOperasi2()
+						case 4:
+							deleteMahasiswa (&dataMahasiswa, &jmlData)
+							menuOperasi2()
+						case 5:
+							run2 = false
+						default:
+							fmt.Println("Input Invalid")
+					}
+					
+				}
+			case 2:
+				fmt.Printf ("\nSekarang bulan ke-")
+				fmt.Scan (&bulanBerjalan)
+				if bulanBerjalan >= 1 && bulanBerjalan <= 12 {
+					fmt.Printf ("\nSistem sudah di-set untuk bulan ke %d\n", bulanBerjalan)
+					fmt.Printf ("\nApa Yang Anda Ingin Lakukan ?\n")
+					fmt.Println ("1 : Input Transaksi Uang Masuk")
+					fmt.Println ("2 : Mencari Mahasiswa Yang Belum Membayar Iuran (Sequantial Search Method)")
+					fmt.Println ("3 : Mencari Mahasiswa Yang Belum Membayar Iuran (Binary Search Method)")
+					fmt.Println ("4 : Menampilkan Data Mahasiswa Berdasarkan Tunggakan")
+					fmt.Println ("5 : Menampilkan Statistik Keuangan")
+					fmt.Println ("6 : Menu Awal")
+					jumlahTunggakan (&dataMahasiswa, bulanBerjalan, jmlData)
+					run3 = true
+					for run3 {
+						fmt.Scan (&operasi3)
+						switch operasi3 {
+							case 1:
+								transaksiMasuk(&dataMahasiswa, &totalKas, jmlData, bulanBerjalan)
+								menuOperasi3 ()
+							case 2:
+								cariBelumBayarSequential(dataMahasiswa, jmlData, bulanBerjalan)
+								fmt.Println()
+								menuOperasi3 ()
+							case 3:
+								cariBelumBayarBinary(dataMahasiswa, jmlData)
+								menuOperasi3 ()
+							case 4:
+								tampilBerdasarkanTunggakan(dataMahasiswa, jmlData)
+								menuOperasi3 ()
+							case 5:
+								tampilStatistikKeuangan(dataMahasiswa, jmlData, totalKas)
+								menuOperasi3 ()
+							case 6:
+								run3 = false
+						}
+					}
+				}else{
+					fmt.Printf ("\nBulan tidak valid\n")
+				}
+			case 3:
+				run1 = false
+				fmt.Printf ("\nTerima kasih telah menggunakan SIKAS >_<\n")
+			default:
+				fmt.Println("Input Invalid")
+		}
+	}
+}
